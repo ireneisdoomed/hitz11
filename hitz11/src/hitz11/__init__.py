@@ -1,1 +1,0 @@
-"""Hitz11 package."""
