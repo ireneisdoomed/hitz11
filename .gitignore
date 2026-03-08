@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+hitz11/.env
+hitz11/hitz11.db
+hitz11/.python-version

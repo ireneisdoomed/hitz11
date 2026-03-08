@@ -1,0 +1,51 @@
+name: Hitz11 Daily Publisher
+
+on:
+  schedule:
+    - cron: "11 9 * * *"
+    - cron: "11 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post-daily:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TIMEZONE: ${{ vars.TIMEZONE || 'Europe/Madrid' }}
+      ORIGIN_KEY: ${{ vars.ORIGIN_KEY || 'basque' }}
+      LANGUAGE: es
+      RECENCY_DAYS: ${{ vars.RECENCY_DAYS || '30' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --project hitz11
+
+      - name: Ensure state release exists
+        run: |
+          gh release view hitz11-state || gh release create hitz11-state --title "Hitz11 State" --notes "Persistent SQLite state for Hitz11"
+
+      - name: Download DB asset if present
+        run: |
+          gh release download hitz11-state -p hitz11.db -D . || true
+
+      - name: Run daily task
+        run: |
+          uv run --project hitz11 hitz11 --db-path hitz11.db daily --expected-time 11:11
+
+      - name: Upload DB asset
+        run: |
+          test -f hitz11.db || exit 1
+          gh release upload hitz11-state hitz11.db --clobber
