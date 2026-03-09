@@ -2,8 +2,7 @@ name: Hitz11 Daily Publisher
 
 on:
   schedule:
-    - cron: "11 9 * * *"
-    - cron: "11 10 * * *"
+    - cron: "*/5 9,10 * * *"
   workflow_dispatch:
 
 permissions:

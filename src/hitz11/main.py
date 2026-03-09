@@ -55,7 +55,7 @@ def run_post(
 
     if not skip_time_check:
         current_hhmm = now_local.strftime("%H:%M")
-        if current_hhmm != expected_time:
+        if current_hhmm < expected_time:
             print(f"Skip: local time is {current_hhmm}, expected {expected_time}")
             return 0
 
