@@ -38,13 +38,30 @@ jobs:
 
       - name: Download DB asset if present
         run: |
-          gh release download hitz11-state -p hitz11.db -D . || true
+          gh release download hitz11-state -p hitz11.db -D . --clobber || true
 
-      - name: Run daily task
+      - name: Run post task
+        id: post
+        shell: bash
         run: |
-          uv run --project hitz11 hitz11 --db-path hitz11.db daily --expected-time 11:11
+          set -euo pipefail
+          out=$(uv run --project hitz11 hitz11 --db-path hitz11.db post --expected-time 11:11)
+          printf '%s\n' "$out"
+
+          if printf '%s\n' "$out" | grep -Eq '^Posted .*\(message_id=[0-9]+\)$'; then
+            echo "posted=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "posted=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload DB asset
+        if: steps.post.outputs.posted == 'true'
         run: |
           test -f hitz11.db || exit 1
-          gh release upload hitz11-state hitz11.db --clobber
+          for i in 1 2 3 4 5; do
+            if gh release upload hitz11-state hitz11.db --clobber; then
+              exit 0
+            fi
+            sleep $((i * 5))
+          done
+          exit 1
